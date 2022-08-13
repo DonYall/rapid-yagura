@@ -1,8 +1,8 @@
 ## Rapid Yagura Shogi - Valorant Edition
 
-Shogi is a Japanese form of the more commonly known "Chess". Both Chess and Shogi share a common ancestor, which was an Indian game known as Chaturanga. 
+Shogi is a Japanese form of what is commonly described as Chess. Both Chess and Shogi share a common ancestor, which was an Indian game known as Chaturanga. 
 
-In Shogi, Yagura is a term used to describe a "castle" or a "fortress". I call this Rapid Yagura Shogi because it inherits an idea in Chess called "castling", which slides the king behind a rook in one move. In Shogi, castles are much more complicated and require knowledge of different attacks and traps.
+In Shogi, Yagura is a term used to describe a "castle" or a "fortress", while its direct Japanese translation could also mean something such as "tower" or "keep". I call this Rapid Yagura Shogi because it inherits an idea in Chess called "castling", which slides the king behind a rook in one move. In Shogi, castles are much more complicated and require knowledge of different attacks and traps.
 
 ## Releases
 

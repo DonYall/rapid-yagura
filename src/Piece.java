@@ -1,6 +1,7 @@
 import java.util.ArrayList;
 import java.util.Arrays;
 
+
 public class Piece {
     int vision;
     int value;
@@ -9,18 +10,17 @@ public class Piece {
     int xPos;
     int yPos;
     boolean isBlue;
-    boolean isUlted;
     ArrayList<Piece> pieces;
+    boolean canRes = true;
 
     int x;
     int y;
 
-    public Piece(String agent, int xPos, int yPos, boolean isBlue, boolean isUlted, ArrayList<Piece> pieces) {
+    public Piece(String agent, int xPos, int yPos, boolean isBlue, ArrayList<Piece> pieces) {
         this.agent = agent;
         this.xPos = xPos;
         this.yPos = yPos;
         this.isBlue = isBlue;
-        this.isUlted = isUlted;
         this.pieces = pieces;
 
         x = xPos*App.pieceSize;
@@ -49,7 +49,7 @@ public class Piece {
             type = "knight";
             value = 3;
         }
-        String[] silvers = { "brimstone", "astra", "killjoy", "viper" };
+        String[] silvers = { "brimstone", "astra", "killjoy", "viper", "uraze", "ufade", "ubreach", "ureyna", "ujett", "uphoenix", "uskye", "usage", "ukayo" };
         for (int i = 0; i < silvers.length; i++) {
             if (agent.equalsIgnoreCase(silvers[i])) {
                 type = "silver";
@@ -61,7 +61,6 @@ public class Piece {
             value = 0;
         }
 
-        if(isUlted) value += 2;
 
         pieces.add(this);
     }
@@ -70,43 +69,46 @@ public class Piece {
         if (bypass) {
             if (App.getPiece(xPos * App.pieceSize, yPos * App.pieceSize) != null) {
                 if (App.getPiece(xPos *App.pieceSize, yPos * App.pieceSize).isBlue!=isBlue) {
-                    // App.getPiece(xPos * App.pieceSize, yPos * App.pieceSize).kill();   
+                    
                 } else {
                     x = this.xPos * App.pieceSize;
                     y = this.yPos * App.pieceSize;
                     return;
                 }
             }
+            
             this.xPos = xPos;
             this.yPos = yPos;
 
         } else {
             ArrayList<int[]> squares = App.getAvailableSquares(this);
-            for (int i = 0; i < squares.size(); i++) {
-                for (int j = 0; j < squares.get(i).length; j++) {
-                    System.out.print(squares.get(i)[j]);
-                }
-                System.out.println();
-            }
-            System.out.println();
             if (squares.stream().anyMatch(a -> Arrays.equals(a, new int[]{xPos, yPos}))) {
                 App.lastDeparture[0] = this.xPos;
                 App.lastDeparture[1] = this.yPos;
                 if (App.getPiece(xPos * App.pieceSize, yPos * App.pieceSize) != null) {
                     if (App.getPiece(xPos *App.pieceSize, yPos * App.pieceSize).isBlue!=isBlue) {
-                        if (this.isBlue) {
-                            App.blueMaterial += App.getPiece(xPos *App.pieceSize, yPos * App.pieceSize).value;
-                        } else {
-                            App.redMaterial += App.getPiece(xPos *App.pieceSize, yPos * App.pieceSize).value;
-                        }
-                        
-                        App.getPiece(xPos * App.pieceSize, yPos * App.pieceSize).kill(); 
+                    Piece p = App.getPiece(xPos *App.pieceSize, yPos * App.pieceSize);
+                        if (p.canRes) new DeadPiece(p.agent, p.xPos, p.yPos, p.isBlue, App.deadPieces);
+                        App.getPiece(xPos * App.pieceSize, yPos * App.pieceSize).kill();
                         App.selectedPiece = null;
+                        try {
+                            if (App.blue) App.playSound(App.capturewav);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
                     } else {
                         x = this.xPos * App.pieceSize;
                         y = this.yPos * App.pieceSize;
                         App.selectedPiece = null;
+                        updateMaterial();
+                        updateVision();
                         return;
+                    }
+                } else {
+                    try {
+                        if (App.blue) App.playSound(App.movewav);
+                    } catch (Exception e) {
+                        e.printStackTrace();
                     }
                 }
                 if (this.type.equalsIgnoreCase("king")) {
@@ -133,12 +135,38 @@ public class Piece {
                         }
                     }
                 }
-                this.xPos = xPos;
-                this.yPos = yPos;
-                App.lastDestination[0] = this.xPos;
-                App.lastDestination[1] = this.yPos;
-                App.blue = !App.blue;
+                boolean res = false;
+                if (this.agent.equalsIgnoreCase("usage") && App.getDeadPieceFromPos(xPos, yPos, this.isBlue) != null) {
+                    DeadPiece d = App.getDeadPieceFromPos(xPos, yPos, this.isBlue);
+                    Piece p = new Piece(d.agent, d.xPos, d.yPos, d.isBlue, pieces);
+                    p.canRes = false;
+                    d.kill();
+                    res = true;
+                }
+                if (!(this.type.equalsIgnoreCase("lance") && Math.abs(this.xPos-xPos) == 0) && !res) {
+                    this.xPos = xPos;
+                    this.yPos = yPos;
+                }
+                App.lastDestination[0] = xPos;
+                App.lastDestination[1] = yPos;
+
+
+                if (this.type.equalsIgnoreCase("pawn") && this.isBlue) {
+                    if (this.yPos <= 2) {
+                        new Piece("u" + this.agent, this.xPos, this.yPos, this.isBlue, pieces);
+                        this.kill();
+                    }
+                } else if (this.type.equalsIgnoreCase("pawn") && !this.isBlue) {
+                    if (this.yPos >= 6) {
+                        new Piece("u" + this.agent, this.xPos, this.yPos, this.isBlue, pieces);
+                        this.kill();
+                    }
+                }
+                
+                if (App.blue) App.blue = false;
                 App.selectedPiece = null;
+                updateMaterial();
+                updateVision();
             }
             x = this.xPos * App.pieceSize;
             y = this.yPos * App.pieceSize;
@@ -147,7 +175,13 @@ public class Piece {
     }
 
     public void kill() {
+        if (this.type.equalsIgnoreCase("king")) System.out.println("oh no");
+        /*
+        int i = pieces.indexOf(this);
+        pieces.set(i, pieces.get(pieces.size()-1));
+        pieces.remove(pieces.size()-1);*/
         pieces.remove(this);
+        // new DeadPiece(this.agent, this.xPos, this.yPos, this.isBlue, App.deadPieces);
     }
 
     public String getType() {
@@ -157,6 +191,53 @@ public class Piece {
     public void updateXY() {
         this.x = this.xPos*App.pieceSize;
         this.y = this.yPos*App.pieceSize;
+    }
+
+    public void updateMaterial() {
+        App.blueMaterial = 0;
+        App.redMaterial = 0;
+        for (Piece p : pieces) {
+            if (App.inBounds(p.xPos, p.yPos)) {
+                if (p.isBlue) App.blueMaterial += p.value;
+                else App.redMaterial += p.value;    
+            }
+        }
+    }
+
+    public void updateVision() {
+        App.blueVision = 0;
+        App.redVision = 0;
+        for (int i = 0; i < pieces.size(); i++) {
+            Piece p = pieces.get(i);
+            ArrayList<int[]> moves = new ArrayList<int[]>();
+            for (int[] move : App.getAvailableSquares(pieces.get(i))) {
+                if(!moves.contains(move)) moves.add(move);
+            }
+            if (p.isBlue) {
+                App.blueVision += moves.size();
+            } else {
+                App.redVision += moves.size();
+            }
+        }
+        if (App.redCastled) {
+            App.redVision += 3;
+        } else {
+            int b = 0;
+            int r = 0;
+            for (Piece piece : pieces) {
+                if (piece.yPos == 8) {
+                    b++;
+                } else if (piece.yPos == 0) {
+                    r++;
+                }
+            }
+            if (r > 6) App.redVision -= 2;
+            if (b > 6) App.blueVision -= 2;
+        }
+        if (App.blueCastled) App.blueVision += 10;
+        if (App.redCastled) App.redVision += 10;
+        if (App.canCastleChamber(true) || App.canCastleSova(true)) App.blueVision += 2;
+        if (App.canCastleChamber(false) || App.canCastleSova(false)) App.redVision += 2;
     }
 
 }
