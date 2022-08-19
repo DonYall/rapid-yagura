@@ -7,6 +7,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
+import java.net.Socket;
 import java.net.URL;
 import java.net.URLConnection;
 
@@ -14,10 +15,17 @@ import javax.imageio.ImageIO;
 import javax.sound.sampled.*;
 
 public class App extends JFrame {
+    int posX = 0, posY = 0;
+    private int port;
+    private ClientSideConnection csc;
+    public static int playerID;
+    public static boolean simple= true;
     public static int move = 0;
     public static boolean blue = true;
+    public static boolean turn = false;
     public static boolean pvp = true;
-    private boolean trueBlue = false;
+    Image bluePieces[] = new Image[20];
+    Image redPieces[] = new Image[20];
     public static float blueVision;
     public static float redVision;
     public static int blueMaterial = 0;
@@ -55,7 +63,9 @@ public class App extends JFrame {
 
     JPanel gamePanel;
 
-    public App() throws Exception {
+    public App(int port) throws Exception {
+
+        this.port = port;
 
         moveURL = App.class.getResource("move.wav");
         captureURL = App.class.getResource("capture.wav");
@@ -71,7 +81,7 @@ public class App extends JFrame {
         breachURL = App.class.getResource("breach.wav");
 
         // Constructing the GUI
-        setSize((int) (pieceSize * 9.5 * 16/9), (int) (pieceSize * 9.5));
+        setSize((int) (pieceSize * 9.5 * 16/9) , (int) (pieceSize * 9.5));
         setUndecorated(true);
         setVisible(true);
 
@@ -127,14 +137,26 @@ public class App extends JFrame {
         // Getting images for blue team pieces
         //BufferedImage blue = ImageIO.read(getInputStream(new URL("https://cdn.discordapp.com/attachments/873323229979230258/1005952553621663835/blueTeamm.png")));
         BufferedImage blue = ImageIO.read(App.class.getResource("blueTeamm.png"));
-        Image bluePieces[] = new Image[20];
+        Image bluePiecesW[] = new Image[20];
         //ImageIcon bluePiecesI[] = new ImageIcon[20];
         //JLabel bluePiecesL[] = new JLabel[20];
         int c = 0;
         for (int y = 0; y < 300; y += 100) {
             for (int x = 0; x < 900; x += 100) {
                 if (y == 100 && x > 100) continue; // 2nd row only has 2 pieces
-                bluePieces[c] = blue.getSubimage(x, y, 100, 100).getScaledInstance(pieceSize, pieceSize, BufferedImage.SCALE_SMOOTH);
+                bluePiecesW[c] = blue.getSubimage(x, y, 100, 100).getScaledInstance(pieceSize, pieceSize, BufferedImage.SCALE_SMOOTH);
+                //bluePiecesI[c] = new ImageIcon(bluePieces[c]);
+                //bluePiecesL[c] = new JLabel(bluePiecesI[c]);
+                c++;
+            }
+        }
+        BufferedImage blueF = ImageIO.read(App.class.getResource("blueTeammF.png"));
+        Image bluePiecesF[] = new Image[20];
+        c = 0;
+        for (int y = 0; y < 300; y += 100) {
+            for (int x = 0; x < 900; x += 100) {
+                if (y == 100 && x > 100) continue; // 2nd row only has 2 pieces
+                bluePiecesF[c] = blueF.getSubimage(x, y, 100, 100).getScaledInstance(pieceSize, pieceSize, BufferedImage.SCALE_SMOOTH);
                 //bluePiecesI[c] = new ImageIcon(bluePieces[c]);
                 //bluePiecesL[c] = new JLabel(bluePiecesI[c]);
                 c++;
@@ -142,27 +164,25 @@ public class App extends JFrame {
         }
 
         // Getting images for red team pieces
-        Image redPieces[] = new Image[20];
-        if (trueBlue) {
-            BufferedImage red = ImageIO.read(getInputStream(new URL("https://cdn.discordapp.com/attachments/873323229979230258/1005952555618156696/redTeamF.png")));
-            c = 0;
-            for (int y = 200; y >= 0; y -= 100) {
-                for (int x = 800; x >=0; x -= 100) {
-                    if (y == 100 && x < 700) continue; // 2nd row only has 2 pieces
-                    redPieces[c] = red.getSubimage(x, y, 100, 100).getScaledInstance(pieceSize, pieceSize, BufferedImage.SCALE_SMOOTH);
-                    c++;
-                }
+        Image redPiecesW[] = new Image[20];
+        //BufferedImage red = ImageIO.read(getInputStream(new URL("https://cdn.discordapp.com/attachments/873323229979230258/1005952555928530944/redTeamm.png")));
+        BufferedImage red = ImageIO.read(App.class.getResource("redTeamm.png"));
+        c = 0;
+        for (int y = 0; y < 300; y += 100) {
+            for (int x = 0; x < 900; x += 100) {
+                if (y == 100 && x > 100) continue; // 2nd row only has 2 pieces
+                redPiecesW[c] = red.getSubimage(x, y, 100, 100).getScaledInstance(pieceSize, pieceSize, BufferedImage.SCALE_SMOOTH);
+                c++;
             }
-        } else {
-            //BufferedImage red = ImageIO.read(getInputStream(new URL("https://cdn.discordapp.com/attachments/873323229979230258/1005952555928530944/redTeamm.png")));
-            BufferedImage red = ImageIO.read(App.class.getResource("redTeamm.png"));
-            c = 0;
-            for (int y = 0; y < 300; y += 100) {
-                for (int x = 0; x < 900; x += 100) {
-                    if (y == 100 && x > 100) continue; // 2nd row only has 2 pieces
-                    redPieces[c] = red.getSubimage(x, y, 100, 100).getScaledInstance(pieceSize, pieceSize, BufferedImage.SCALE_SMOOTH);
-                    c++;
-                }
+        }
+        BufferedImage redF = ImageIO.read(App.class.getResource("redTeammF.png"));
+        Image redPiecesF[] = new Image[20];
+        c = 0;
+        for (int y = 0; y < 300; y += 100) {
+            for (int x = 0; x < 900; x += 100) {
+                if (y == 100 && x > 100) continue; // 2nd row only has 2 pieces
+                redPiecesF[c] = redF.getSubimage(x, y, 100, 100).getScaledInstance(pieceSize, pieceSize, BufferedImage.SCALE_SMOOTH);
+                c++;
             }
         }
 
@@ -183,16 +203,27 @@ public class App extends JFrame {
         // Coords image
         BufferedImage coords = ImageIO.read(App.class.getResource("coords.png"));
         Image coordss = (coords.getScaledInstance((int) (9.5*pieceSize), (int) (9.5*pieceSize), BufferedImage.SCALE_SMOOTH));
+        BufferedImage coordsF = ImageIO.read(App.class.getResource("coordsF.png"));
+        Image coordssF = (coordsF.getScaledInstance((int) (9.5*pieceSize), (int) (9.5*pieceSize), BufferedImage.SCALE_SMOOTH));
 
         // GG image
         //BufferedImage gg = ImageIO.read(getInputStream(new URL("https://cdn.discordapp.com/attachments/873323229979230258/1005952554221453433/gg.png")));
         BufferedImage gg = ImageIO.read(App.class.getResource("gg.png"));
+
+        bluePieces = bluePiecesW;
+        redPieces = redPiecesW;
 
         // Drawing the game panel and starting position
         gamePanel = new JPanel() {
             @Override
             public void paintComponent(Graphics g) {
                 super.paintComponent(g);
+
+                if (playerID > 1) {
+                    bluePieces = redPiecesF;
+                    redPieces = bluePiecesF;
+                }
+
                 boolean bChec = false;
                 boolean rChec = false;
                 if (isChecked(true)) {
@@ -206,12 +237,12 @@ public class App extends JFrame {
                 g.fillRect(0, 0, (int) (pieceSize * 9.5 * 16/9), (int) (pieceSize * 9.5));
                 
                 g.setColor(Color.WHITE);
-                g.setFont(new Font("Source Han Sans JP Semi-Bold", 0, 16));
+                g.setFont(new Font(Font.SANS_SERIF, 0, 16));
                 bCypher.updateMaterial();
                 g.drawString(String.valueOf(redMaterial-blueMaterial), 10*pieceSize, pieceSize/2);
                 g.drawString(String.valueOf(blueMaterial-redMaterial), 10*pieceSize, 9*pieceSize);
                 
-                g.setFont(new Font("Source Han Sans JP Semi-Bold", 0, 40));
+                g.setFont(new Font(Font.SANS_SERIF, 0, 40));
                 if (lastBlueMove.length() > 4) {
                     g.drawString(lastBlueMove, (int) (10.5*pieceSize), 5*pieceSize);
                 } else {
@@ -219,78 +250,254 @@ public class App extends JFrame {
                 }
                 g.drawString(lastRedMove, 14*pieceSize, 5*pieceSize);
 
-                if (move == 1) {
-                    if (getPieceFromPos(2, 6) == null) {
-                        opening1 = "Bird Opening";
-                    } else if (getPieceFromPos(3, 7) != null) {
-                        if (getPieceFromPos(3, 7).type.equalsIgnoreCase("knight")) {
-                            opening1 = "Charging Knight Attack";
+                if (playerID == 1) {
+                    if (move == 1) {
+                        if (getPieceFromPos(2, 6) == null) {
+                            opening1 = "Bird Opening";
+                        } else if (getPieceFromPos(3, 7) != null) {
+                            if (getPieceFromPos(3, 7).type.equalsIgnoreCase("knight")) {
+                                opening1 = "Charging Knight Attack";
+                            }
+                        } else if (getPieceFromPos(4, 6) == null) {
+                            opening1 = "Center Game";
+                        } else if (getPieceFromPos(5, 6) == null) {
+                            opening1 = "English Opening";
+                        } else if (getPieceFromPos(7, 6) == null) {
+                            opening1 = "Static Yoru Attack";
+                        } else if (getPieceFromPos(8, 6) == null) {
+                            opening1 = "Russian Opening";
+                        } else if (getPieceFromPos(6, 6) == null) {
+                            opening1 = "Australian Attack";
                         }
-                    } else if (getPieceFromPos(4, 6) == null) {
-                        opening1 = "Center Game";
-                    } else if (getPieceFromPos(7, 6) == null) {
-                        opening1 = "Static Yoru";
-                    }
-                } else if (move == 2) {
-                    if (opening1.equals("Bird Opening")) {
-                        if (getPieceFromPos(6, 2) == null) {
-                            opening2 = "Neon's Gambit";
-                        } else if (getPieceFromPos(8, 2) == null) {
-                            opening2 = "Fianchetto Variation";
-                        } else if (getPieceFromPos(1, 2) == null) {
-                            opening2 = "Static Yoru Counterattack";
-                        } else if (getPieceFromPos(5, 2) == null) {
-                            opening2 = "French Defence";
-                        }
-                    } else {
+    
+    
+                    } else if (move == 2) {
                         if (getPieceFromPos(8, 2) == null) {
                             opening2 = "Fianchetto Variation";
                         } else if (getPieceFromPos(1, 2) == null) {
                             opening2 = "Static Yoru Counterattack";
                         } else if (getPieceFromPos(4, 2) == null) {
-                            opening2 = "Center Attack";
+                            opening2 = "Central System";
+                        } else if (getPieceFromPos(6, 2) == null) {
+                            opening2 = "Bird Variation";
+                        } else if (getPieceFromPos(5, 1) != null) {
+                            if (getPieceFromPos(5, 1).type.equalsIgnoreCase("knight")) {
+                                if (opening1.equals("Charging Knight Attack")) {
+                                    opening2 = "Mirrored Variation";
+                                } else {
+                                    opening2 = "Charging Knight Attack";
+                                }
+                            }
+                        } else if (getPieceFromPos(5, 2) == null) {
+                            opening2 = "Spanish Defense";
+                        } else if (getPieceFromPos(7, 2) == null) {
+                            opening2 = "Turkish Defense";
                         }
-                    }
-                } else if (move == 3) {
-                    if (getPieceFromPos(0, 6) == null) {
-                        opening3 = "Late Fianchetto";
-                    }
-                    if (opening2.equals("Neon's Gambit")) {
-                        if (blueMaterial-redMaterial > 3) {
-                            opening3 = "Accepted";
-                        } else {
-                            if (getPieceFromPos(2, 6) == null && getPieceFromPos(3, 6) != null) {
-                                opening3 = "Reversed Countergambit";
+    
+                        if (opening1.equals("Bird Opening")) {
+                            if (getPieceFromPos(6, 2) == null) {
+                                opening2 = "Neon's Gambit";
+                            }
+    
+                        } else if (opening1.equals("English Opening")) {
+                            if (getPieceFromPos(2, 2) == null) {
+                                opening2 = "London System";
+                            }
+    
+                        } else if (opening1.equals("Center Game")) {
+                            if (getPieceFromPos(4, 2) == null) {
+                                opening2 = "Mirrored Variation";
+                            }
+    
+                        } else if (opening1.equals("Static Yoru")) {
+                            if (getPieceFromPos(7, 6) == null) {
+                                opening2 = "Chinese Rally Variation";
+                            }
+                        
+                        } else if (opening1.equals("Russian Opening")) {
+                            if (getPieceFromPos(8, 2) == null) {
+                                opening2 = "French Defense";
+                            } else if (getPieceFromPos(0, 2) == null) {
+                                opening2 = "Alaskan Counterattack";
+                            }
+    
+                        } else if (opening1.equals("Australian Attack")) {
+                            
+                        }
+    
+    
+                    } else if (move == 3) {
+                        
+                        if (getPieceFromPos(0, 6) == null) {
+                            opening3 = "Late Fianchetto";
+                        }
+    
+                        if (opening2.equals("Neon's Gambit")) {
+                            if (blueMaterial-redMaterial > 3) {
+                                opening3 = "Accepted";
                             } else {
-                                if (getPieceFromPos(2, 6) != null) {
-                                    if (getPieceFromPos(2, 6).type.equalsIgnoreCase("bishop")) {
-                                        opening3 = "Demon Killer Variation";
+                                if (getPieceFromPos(2, 6) == null && getPieceFromPos(3, 6) != null) {
+                                    opening3 = "Swedish Countergambit";
+                                } else {
+                                    if (getPieceFromPos(2, 6) != null) {
+                                        if (getPieceFromPos(2, 6).type.equalsIgnoreCase("bishop")) {
+                                            opening3 = "Demon Killer Variation";
+                                        } else {
+                                            opening3 = "Closed Variation";
+                                        }
                                     } else {
                                         opening3 = "Closed Variation";
                                     }
+                                }    
+                            }
+    
+                        } else if (opening2.equals("Spanish Defense") && opening1.equals("Bird Opening")) {
+                            if (getPieceFromPos(2, 6) != null) {
+                                opening3 = "Modern Variation";
+                            } else if (getPieceFromPos(2, 5) == null) {
+                                opening3 = "Advance Variation";                            
+                            } else if (getPieceFromPos(3, 6) == null) {
+                                opening3 = "Classical Variation";
+                            }
+    
+                        } else if  (opening2.equals("Bird Variation")) {
+                            if (getPieceFromPos(2, 6) == null) {
+                                opening3 = "Neon's Gambit";
+                            }
+                        }
+                    }    
+                } else {
+                    if (move == 1) {
+                        if (getPieceFromPos(8-2, 8-6) == null) {
+                            opening1 = "Bird Opening";
+                        } else if (getPieceFromPos(8-3, 8-7) != null) {
+                            if (getPieceFromPos(3, 7).type.equalsIgnoreCase("knight")) {
+                                opening1 = "Charging Knight Attack";
+                            }
+                        } else if (getPieceFromPos(8-4, 8-6) == null) {
+                            opening1 = "Center Game";
+                        } else if (getPieceFromPos(8-5, 8-6) == null) {
+                            opening1 = "English Opening";
+                        } else if (getPieceFromPos(8-7, 8-6) == null) {
+                            opening1 = "Static Yoru Attack";
+                        } else if (getPieceFromPos(8-8, 8-6) == null) {
+                            opening1 = "Russian Opening";
+                        } else if (getPieceFromPos(8-6, 8-6) == null) {
+                            opening1 = "Australian Attack";
+                        }
+    
+    
+                    } else if (move == 2) {
+                        if (getPieceFromPos(8-8, 8-2) == null) {
+                            opening2 = "Fianchetto Variation";
+                        } else if (getPieceFromPos(8-1, 8-2) == null) {
+                            opening2 = "Static Yoru Counterattack";
+                        } else if (getPieceFromPos(8-4, 8-2) == null) {
+                            opening2 = "Central System";
+                        } else if (getPieceFromPos(8-6, 8-2) == null) {
+                            opening2 = "Bird Variation";
+                        } else if (getPieceFromPos(8-5, 8-1) != null) {
+                            if (getPieceFromPos(8-5, 8-1).type.equalsIgnoreCase("knight")) {
+                                if (opening1.equals("Charging Knight Attack")) {
+                                    opening2 = "Mirrored Variation";
                                 } else {
-                                    opening3 = "Closed Variation";
+                                    opening2 = "Charging Knight Attack";
                                 }
-                            }    
+                            }
+                        } else if (getPieceFromPos(8-5, 8-2) == null) {
+                            opening2 = "Spanish Defense";
+                        } else if (getPieceFromPos(8-7, 8-2) == null) {
+                            opening2 = "Turkish Defense";
                         }
-                    } else if (opening2.equals("French Defence")) {
-                        if (getPieceFromPos(2, 6) != null) {
-                            opening3 = "Modern Variation";
-                        } else if (getPieceFromPos(2, 5) == null) {
-                            opening3 = "Advance Variation";                            
-                        } else if (getPieceFromPos(3, 6) == null) {
-                            opening3 = "Classical Variation";
+    
+                        if (opening1.equals("Bird Opening")) {
+                            if (getPieceFromPos(8-6, 8-2) == null) {
+                                opening2 = "Neon's Gambit";
+                            }
+    
+                        } else if (opening1.equals("English Opening")) {
+                            if (getPieceFromPos(8-2, 8-2) == null) {
+                                opening2 = "London System";
+                            }
+    
+                        } else if (opening1.equals("Center Game")) {
+                            if (getPieceFromPos(8-4, 8-2) == null) {
+                                opening2 = "Mirrored Variation";
+                            }
+    
+                        } else if (opening1.equals("Static Yoru")) {
+                            if (getPieceFromPos(8-7, 8-6) == null) {
+                                opening2 = "Chinese Rally Variation";
+                            }
+                        
+                        } else if (opening1.equals("Russian Opening")) {
+                            if (getPieceFromPos(8-8, 8-2) == null) {
+                                opening2 = "French Defense";
+                            } else if (getPieceFromPos(8-0, 8-2) == null) {
+                                opening2 = "Alaskan Counterattack";
+                            }
+    
+                        } else if (opening1.equals("Australian Attack")) {
+                            
                         }
-                    }
+    
+    
+                    } else if (move == 3) {
+                        
+                        if (getPieceFromPos(8-0, 8-6) == null) {
+                            opening3 = "Late Fianchetto";
+                        }
+    
+                        if (opening2.equals("Neon's Gambit")) {
+                            if (blueMaterial-redMaterial > 3) {
+                                opening3 = "Accepted";
+                            } else {
+                                if (getPieceFromPos(8-2, 8-6) == null && getPieceFromPos(8-3, 8-6) != null) {
+                                    opening3 = "Swedish Countergambit";
+                                } else {
+                                    if (getPieceFromPos(8-2, 8-6) != null) {
+                                        if (getPieceFromPos(8-2, 8-6).type.equalsIgnoreCase("bishop")) {
+                                            opening3 = "Demon Killer Variation";
+                                        } else {
+                                            opening3 = "Closed Variation";
+                                        }
+                                    } else {
+                                        opening3 = "Closed Variation";
+                                    }
+                                }    
+                            }
+    
+                        } else if (opening2.equals("Spanish Defense") && opening1.equals("Bird Opening")) {
+                            if (getPieceFromPos(8-2, 8-6) != null) {
+                                opening3 = "Modern Variation";
+                            } else if (getPieceFromPos(8-2, 8-5) == null) {
+                                opening3 = "Advance Variation";                            
+                            } else if (getPieceFromPos(8-3, 8-6) == null) {
+                                opening3 = "Classical Variation";
+                            }
+    
+                        } else if  (opening2.equals("Bird Variation")) {
+                            if (getPieceFromPos(8-2, 8-6) == null) {
+                                opening3 = "Neon's Gambit";
+                            }
+                        }
+                    }    
                 }
 
-                g.setFont(new Font("Source Han Sans JP Semi-Bold", 0, 20));
+                g.setFont(new Font("Dialog", 0, 20));
+                g.setColor(Color.GRAY);
                 g.drawString(opening1, 10*pieceSize, 2*pieceSize);
                 g.drawString(opening2, 10*pieceSize, (int) (2.5*pieceSize));
                 g.drawString(opening3, 10*pieceSize, 3*pieceSize);
 
                 g.drawImage(imagee, 0, 0, null);
-                g.drawImage(coordss, 0, 0, null);
+                
+                if (playerID > 1) {
+                    g.drawImage(coordssF, 0, 0, null);
+                } else {
+                    g.drawImage(coordss, 0, 0, null);
+                }
+                
 
                 for (Piece s : stunnedPieces) {
                     g.drawImage(misc[9], s.x, s.y, this);
@@ -405,7 +612,9 @@ public class App extends JFrame {
                 if (isCheckmated(App.blue)) g.drawImage(gg.getScaledInstance(pieceSize*9, pieceSize*9, BufferedImage.SCALE_SMOOTH), 0, 0, null);
             }
         };
-        
+        BufferedImage icon = ImageIO.read(App.class.getResource("icon.png"));
+        setTitle("Rapid Yagura");
+        setIconImage(icon);
         add(gamePanel);
         addMouseMotionListener(new MouseMotionListener() {
 
@@ -415,6 +624,8 @@ public class App extends JFrame {
                     selectedPiece.x = e.getX() - pieceSize/2;
                     selectedPiece.y = (int)(e.getY() - pieceSize/1.2);
                     repaint();
+                } else {
+                    setLocation(e.getXOnScreen() - posX, e.getYOnScreen() - posY);
                 }
             }
 
@@ -436,15 +647,22 @@ public class App extends JFrame {
                         selectedPiece = getPiece(e.getX(), e.getY());
                     }
                 } else {
-                    if (getPiece(e.getX(), e.getY()) != null && getPiece(e.getX(), e.getY()).isBlue == App.blue) {
+                    if (getPiece(e.getX(), e.getY()) != null && getPiece(e.getX(), e.getY()).isBlue && turn) {
                         selectedPiece = getPiece(e.getX(), e.getY());
                     }
                 }
+                posX = e.getX();
+                posY = e.getY();
             }
 
             @Override
             public void mouseReleased(MouseEvent e) {
-                selectedPiece.move(e.getX()/pieceSize, e.getY()/pieceSize, false);
+                boolean blu = App.blue;
+                int oldX = selectedPiece.xPos;
+                int oldY = selectedPiece.yPos;
+                int newX = e.getX()/pieceSize;
+                int newY = e.getY()/pieceSize;
+                selectedPiece.move(newX, newY, false);
                 repaint();
                 System.out.println(evaluate());
                 if (!pvp) {
@@ -456,6 +674,10 @@ public class App extends JFrame {
                             if(isCheckmated(App.blue)) System.out.println("gg");        
                         }
                     });    
+                } else {
+                    if (App.blue != blu) {
+                        csc.sendMove(8-oldX, 8-oldY, 8-newX, 8-newY);
+                    }
                 }
             }
 
@@ -470,6 +692,78 @@ public class App extends JFrame {
        
         setDefaultCloseOperation(3);
         setVisible(true);
+    }
+
+    private class ClientSideConnection {
+        private Socket socket;
+        private DataInputStream dis;
+        private DataOutputStream dos;
+
+        public ClientSideConnection() {
+            try {
+                socket = new Socket("localhost", port);
+                dis = new DataInputStream(socket.getInputStream());
+                dos = new DataOutputStream(socket.getOutputStream());
+                playerID = dis.readInt();
+                System.out.println("connected as player " + playerID);
+                if (playerID == 1) {
+                    blue = true;
+                    turn = true;
+                } else {
+                    blue = false;
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        public void sendMove(int oldX, int oldY, int newX, int newY) {
+            try {
+                dos.writeInt(oldX);
+                dos.writeInt(oldY);
+                dos.writeInt(newX);
+                dos.writeInt(newY);
+                dos.flush();
+                turn = !turn;
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        public int[][] receiveMove() {
+            int[][] move = new int[2][2];
+            try {
+                move[0][0] = dis.readInt();
+                move[0][1] = dis.readInt();
+                move[1][0] = dis.readInt();
+                move[1][1] = dis.readInt();
+                System.out.println("Received move: " + move[0][0] + ", " + move[0][1] + " : " + move[1][0] + "," + move[1][1]);
+                System.out.println((getPieceFromPos(move[0][0], move[0][1]).isBlue?"blue ":"red ") + getPieceFromPos(move[0][0], move[0][1]).agent);
+                getPieceFromPos(move[0][0], move[0][1]).move(move[1][0], move[1][1], false);
+                repaint();
+                turn = !turn;
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return move;
+        }
+    }
+
+    public void connectToServer() {
+        csc = new ClientSideConnection();
+    }
+
+    public void startReceivingMoves() {
+        Thread t = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (true) {
+                    if (pvp) csc.receiveMove();
+                }
+            }
+            
+        });
+        t.start();
     }
 
     public static DeadPiece getDeadPiece(int x, int y) {
@@ -1095,6 +1389,7 @@ public class App extends JFrame {
         }
         // If the king is checked by a silver
         if (silverCheck(blue)) return true;
+
         // If the king is checked by a king
         x = p.xPos;
         y = p.yPos;
@@ -1102,7 +1397,7 @@ public class App extends JFrame {
         int[] kingY = {-1,  0, +1, +1, -1, -1,  0, +1};
         for (int i = 0; i < kingX.length; i++) {
             if (getPieceFromPos(x+kingX[i], y+kingY[i]) == null) continue;
-            if (getPieceFromPos(x+kingX[i], y+kingY[i]) != null && getPieceFromPos(x+kingX[i], y+kingY[i]).type.equalsIgnoreCase("king") && getPieceFromPos(x+kingX[i], y+kingY[i]).isBlue != blue) {
+            if (getPieceFromPos(x+kingX[i], y+kingY[i]) != null && (getPieceFromPos(x+kingX[i], y+kingY[i]).type.equalsIgnoreCase("king") || ((getPieceFromPos(x+kingX[i], y+kingY[i]).type.equalsIgnoreCase("bishop")) || getPieceFromPos(x+kingX[i], y+kingY[i]).type.equalsIgnoreCase("rook")) && (getPieceFromPos(x+kingX[i], y+kingY[i]).isUlted)) && getPieceFromPos(x+kingX[i], y+kingY[i]).isBlue != blue) {
                 return true;
             }
         }
@@ -1278,6 +1573,7 @@ public class App extends JFrame {
                 int yPos = p.yPos;
                 for (int[] move : getAvailableSquares(p)) {
                     DeadPiece d = null;
+                    if (p.type.equalsIgnoreCase("bishop")) System.out.println(p.xPos + " " + p.agent + " " + move[0] + "," + move[1]);
                     if (p.type.equalsIgnoreCase("king") && Math.abs(move[0] - xPos) > 1) {
                         p.move(move[0], move[1], false);
                     } else {
@@ -1314,6 +1610,7 @@ public class App extends JFrame {
                         else redCastled = false;
                     }
                     if (!(p.type.equalsIgnoreCase("lance") && move[0] - xPos == 0)) {
+                        if (p.type.equalsIgnoreCase("bishop")) System.out.println(p.agent + " back to " + xPos + "," + yPos);
                         p.move(xPos, yPos, true);
                         p.updateXY();
                     }
@@ -1344,6 +1641,7 @@ public class App extends JFrame {
             Piece p = pieces.get(i);
             if (!p.isBlue) {
                 for (int[] move : getAvailableSquares(p)) {
+                    System.out.println(move[0] + "," + move[1]);
                     boolean capture = false;
                     int xPos = p.xPos;
                     int yPos = p.yPos;
@@ -1453,6 +1751,10 @@ public class App extends JFrame {
     }
 
     public static void main(String[] args) throws Exception {
-        new App();
+        App a = new App(9999);
+        if (!pvp) {
+            a.connectToServer();
+            a.startReceivingMoves();
+        }
     }
 }

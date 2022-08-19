@@ -149,12 +149,19 @@ public class Piece {
             ArrayList<int[]> squares = App.getAvailableSquares(this);
             String prefix;
             if (this.type.equalsIgnoreCase("pawn")) {
-                prefix = Character.toString(this.xPos+97);
+                if (App.playerID > 1) {
+                    prefix = Character.toString((char) (8-this.xPos+97));
+                } else {
+                    prefix = Character.toString((char) (this.xPos+97));
+                }
             } else {
                 prefix = this.getPrefix();
             }
             String action = "";
-            String suffix = Character.toString(xPos+97) + (9-yPos);
+            String suffix = Character.toString((char) (xPos+97)) + (9-yPos);
+            if (App.playerID > 1) {
+                suffix = Character.toString((char) (8-xPos+97)) + (1+yPos);
+            }
             if (squares.stream().anyMatch(a -> Arrays.equals(a, new int[]{xPos, yPos}))) {
                 Piece r = pieces.stream().filter((s) -> (s.isBlue == this.isBlue) && s != null && s.agent.equalsIgnoreCase("ureyna")).findFirst().orElse(null);
                 if (r != null) {
@@ -296,6 +303,7 @@ public class Piece {
                 App.lastDestination[1] = yPos;
 
                 if (!App.search) {
+                    App.move++;
                     if (this.isBlue) {
                         if (App.blueBoom != null) {
                             int[] xMoves = {0, 0, 1, -1};
@@ -413,7 +421,6 @@ public class Piece {
             x = this.xPos * App.pieceSize;
             y = this.yPos * App.pieceSize;
             App.selectedPiece = null;
-            App.move++;
         }
     }
 
@@ -486,47 +493,66 @@ public class Piece {
                    "neon",                                                     "yoru",
         "chamber", "omen", "brimstone", "astra", "cypher", "killjoy", "viper", "OMEN", "sova"
         */
-        if (this.type.equalsIgnoreCase("pawn")) {
-            return "";
-        } else if (this.agent.equalsIgnoreCase("uraze")) {
-            return "RZ";
-        } else if (this.agent.equalsIgnoreCase("ufade")) {
-            return "FD";
-        } else if (this.agent.equalsIgnoreCase("ubreach")) {
-            return "BR";
-        } else if (this.agent.equalsIgnoreCase("ureyna")) {
-            return "RN";
-        } else if (this.agent.equalsIgnoreCase("ujett")) {
-            return "JT";
-        } else if (this.agent.equalsIgnoreCase("uphoenix")) {
-            return "PX";
-        } else if (this.agent.equalsIgnoreCase("uskye")) {
-            return "SK";
-        } else if (this.agent.equalsIgnoreCase("usage")) {
-            return "SG";
-        } else if (this.agent.equalsIgnoreCase("kayo")) {
-            return "KO";
-        } else if (this.type.equalsIgnoreCase("bishop")) {
-            return "NE";
-        } else if (this.type.equalsIgnoreCase("rook")) {
-            return "YR";
-        } else if (this.agent.equalsIgnoreCase("chamber") || (this.agent.equalsIgnoreCase("uchamber"))) {
-            return "CH";
-        } else if (this.agent.equalsIgnoreCase("omen") || (this.agent.equalsIgnoreCase("uomen"))) {
-            return "OM";
-        } else if (this.agent.equalsIgnoreCase("brimstone")) {
-            return "BM";
-        } else if (this.agent.equalsIgnoreCase("astra")) {
-            return "AS";
-        } else if (this.agent.equalsIgnoreCase("cypher")) {
-            return "CY";
-        } else if (this.agent.equalsIgnoreCase("killjoy")) {
-            return "KJ";
-        } else if (this.agent.equalsIgnoreCase("viper")) {
-            return "VP";
+        if (!App.simple) {
+            if (this.type.equalsIgnoreCase("pawn")) {
+                return "";
+            } else if (this.agent.equalsIgnoreCase("uraze")) {
+                return "RZ";
+            } else if (this.agent.equalsIgnoreCase("ufade")) {
+                return "FD";
+            } else if (this.agent.equalsIgnoreCase("ubreach")) {
+                return "BR";
+            } else if (this.agent.equalsIgnoreCase("ureyna")) {
+                return "RN";
+            } else if (this.agent.equalsIgnoreCase("ujett")) {
+                return "JT";
+            } else if (this.agent.equalsIgnoreCase("uphoenix")) {
+                return "PX";
+            } else if (this.agent.equalsIgnoreCase("uskye")) {
+                return "SK";
+            } else if (this.agent.equalsIgnoreCase("usage")) {
+                return "SG";
+            } else if (this.agent.equalsIgnoreCase("kayo")) {
+                return "KO";
+            } else if (this.type.equalsIgnoreCase("bishop")) {
+                return "NE";
+            } else if (this.type.equalsIgnoreCase("rook")) {
+                return "YR";
+            } else if (this.agent.equalsIgnoreCase("chamber") || (this.agent.equalsIgnoreCase("uchamber"))) {
+                return "CH";
+            } else if (this.agent.equalsIgnoreCase("omen") || (this.agent.equalsIgnoreCase("uomen"))) {
+                return "OM";
+            } else if (this.agent.equalsIgnoreCase("brimstone")) {
+                return "BM";
+            } else if (this.agent.equalsIgnoreCase("astra")) {
+                return "AS";
+            } else if (this.agent.equalsIgnoreCase("cypher")) {
+                return "CY";
+            } else if (this.agent.equalsIgnoreCase("killjoy")) {
+                return "KJ";
+            } else if (this.agent.equalsIgnoreCase("viper")) {
+                return "VP";
+            } else {
+                return "SV";
+            }
         } else {
-            return "SV";
+            if (this.type.equalsIgnoreCase("pawn")) {
+                return "";
+            } else if (this.type.equalsIgnoreCase("silver")) {
+                return "S";
+            } else if (this.type.equalsIgnoreCase("lance")) {
+                return "L";
+            } else if (this.type.equalsIgnoreCase("knight")) {
+                return "N";
+            } else if (this.type.equalsIgnoreCase("king")) {
+                return "K";
+            } else if (this.type.equalsIgnoreCase("bishop")) {
+                return "B";
+            } else {//if (this.type.equalsIgnoreCase("rook")) {
+                return "R";
+            }
         }
+        
     }
 
 }
