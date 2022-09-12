@@ -131,7 +131,7 @@ public class Piece {
     public void move(int xPos, int yPos, boolean bypass) {
         if (bypass) {
             if (App.getPiece(xPos * App.pieceSize, yPos * App.pieceSize) != null) {
-                if (App.getPiece(xPos *App.pieceSize, yPos * App.pieceSize).isBlue!=isBlue) {
+                if (App.getPiece(xPos *App.pieceSize, yPos * App.pieceSize).isBlue != isBlue) {
                     
                 } else {
                     if (!this.agent.equalsIgnoreCase("brimstone")) {
@@ -146,6 +146,8 @@ public class Piece {
             this.yPos = yPos;
 
         } else {
+            boolean ded = false;
+            //System.out.println(this.agent + " to " + xPos + ","+ yPos);
             ArrayList<int[]> squares = App.getAvailableSquares(this);
             String prefix;
             if (this.type.equalsIgnoreCase("pawn")) {
@@ -199,7 +201,7 @@ public class Piece {
                                         if (p.canRes) new DeadPiece(p.agent, p.xPos, p.yPos, p.isBlue, App.deadPieces);
                                         App.getPiece(xPos * App.pieceSize, yPos * App.pieceSize).kill();
                                         App.selectedPiece = null;
-                                        if (App.blue) App.playSound(App.captureURL);
+                                        App.playSound(App.captureURL);
                                     }
                                 } else {
                                     if (App.inBounds(App.redPhoenix[0], App.redPhoenix[1])) {
@@ -216,14 +218,15 @@ public class Piece {
                                         if (p.canRes) new DeadPiece(p.agent, p.xPos, p.yPos, p.isBlue, App.deadPieces);
                                         App.getPiece(xPos * App.pieceSize, yPos * App.pieceSize).kill();
                                         App.selectedPiece = null;
-                                        if (App.blue) App.playSound(App.captureURL);
+                                        App.playSound(App.captureURL);
                                     }
                                 }
                             } else {
+                                ded = true;
                                 if (p.canRes) new DeadPiece(p.agent, p.xPos, p.yPos, p.isBlue, App.deadPieces);
                                 App.getPiece(xPos * App.pieceSize, yPos * App.pieceSize).kill();
                                 App.selectedPiece = null;
-                                if (App.blue) App.playSound(App.captureURL);
+                                App.playSound(App.captureURL);
                                 if (this.agent.equalsIgnoreCase("ureyna")) {
                                     App.playSound(App.laughURL[(int)Math.round(Math.random())]);
                                     this.isUlted = true;
@@ -257,7 +260,7 @@ public class Piece {
                         }
                     }
                 } else {
-                    if (App.blue) App.playSound(App.moveURL);
+                    App.playSound(App.moveURL);
                 }
                 if (this.type.equalsIgnoreCase("king")) {
                     if (this.xPos - xPos > 1) {
@@ -295,7 +298,7 @@ public class Piece {
                     d.kill();
                     res = true;
                 }
-                if (!(this.type.equalsIgnoreCase("lance") && Math.abs(this.xPos-xPos) == 0) && !res && !boom) {
+                if (!(this.type.equalsIgnoreCase("lance") && Math.abs(this.xPos-xPos) == 0 && ded) && !res && !boom) {
                     this.xPos = xPos;
                     this.yPos = yPos;
                 }
@@ -311,12 +314,13 @@ public class Piece {
                             for (int index = 0; index < xMoves.length; index++) {
                                 Piece p = App.getPieceFromPos(App.blueBoom.xPos+xMoves[index], App.blueBoom.yPos+yMoves[index]);
                                 if (p != null) {
-                                    if (p.isBlue == this.isBlue && p.type.equalsIgnoreCase("king")) {
+                                    if (p.isBlue == this.isBlue && !p.type.equalsIgnoreCase("king")) {
                                         if (p.canRes) {
                                             new DeadPiece(p.agent, p.xPos, p.yPos, p.isBlue, App.deadPieces);
                                         }
                                         p.kill();
                                     }
+                                } else {
                                 }
                             }
                             App.blueBoom.kill();
@@ -337,6 +341,7 @@ public class Piece {
                                         }
                                         p.kill();
                                     }
+                                } else {
                                 }
                             }
                             App.redBoom.kill();

@@ -7,18 +7,22 @@ import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.net.URL;
 import java.net.URLConnection;
+import java.net.UnknownHostException;
 
 import javax.imageio.ImageIO;
 import javax.sound.sampled.*;
 
 public class App extends JFrame {
     int posX = 0, posY = 0;
+    private String ip;
     private int port;
     private ClientSideConnection csc;
     public static int playerID;
+    private int gameID;
     public static boolean simple= true;
     public static int move = 0;
     public static boolean blue = true;
@@ -63,9 +67,17 @@ public class App extends JFrame {
 
     JPanel gamePanel;
 
-    public App(int port) throws Exception {
-
+    public App(String ip, int port) throws Exception {
+        if (ip.equals("don")) {
+            this.ip = "jh-bai-bej-bd";
+        } else {
+            this.ip = ip;
+        }
         this.port = port;
+        if (ip.equals("bot")) {
+            pvp = false;
+            playerID = 1;
+        }
 
         moveURL = App.class.getResource("move.wav");
         captureURL = App.class.getResource("capture.wav");
@@ -132,7 +144,6 @@ public class App extends JFrame {
         new Piece("viper",     6, 8, true, pieces);
         new Piece("OMEN",      7, 8, true, pieces);
         new Piece("sova",      8, 8, true, pieces);
-
 
         // Getting images for blue team pieces
         //BufferedImage blue = ImageIO.read(getInputStream(new URL("https://cdn.discordapp.com/attachments/873323229979230258/1005952553621663835/blueTeamm.png")));
@@ -219,6 +230,9 @@ public class App extends JFrame {
             public void paintComponent(Graphics g) {
                 super.paintComponent(g);
 
+                Graphics2D g2 = (Graphics2D) g;
+                g2.setRenderingHints(new RenderingHints(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON));
+
                 if (playerID > 1) {
                     bluePieces = redPiecesF;
                     redPieces = bluePiecesF;
@@ -241,6 +255,9 @@ public class App extends JFrame {
                 bCypher.updateMaterial();
                 g.drawString(String.valueOf(redMaterial-blueMaterial), 10*pieceSize, pieceSize/2);
                 g.drawString(String.valueOf(blueMaterial-redMaterial), 10*pieceSize, 9*pieceSize);
+                //g.drawString(String.valueOf(-evaluate()), 10*pieceSize, pieceSize/2);
+                //g.drawString(String.valueOf(evaluate()), 10*pieceSize, 9*pieceSize);
+
                 
                 g.setFont(new Font(Font.SANS_SERIF, 0, 40));
                 if (lastBlueMove.length() > 4) {
@@ -257,6 +274,8 @@ public class App extends JFrame {
                         } else if (getPieceFromPos(3, 7) != null) {
                             if (getPieceFromPos(3, 7).type.equalsIgnoreCase("knight")) {
                                 opening1 = "Charging Knight Attack";
+                            } else {
+                                opening1 = "wtf even was that move";
                             }
                         } else if (getPieceFromPos(4, 6) == null) {
                             opening1 = "Center Game";
@@ -268,6 +287,10 @@ public class App extends JFrame {
                             opening1 = "Russian Opening";
                         } else if (getPieceFromPos(6, 6) == null) {
                             opening1 = "Australian Attack";
+                        } else if (getPieceFromPos(0, 6) == null) {
+                            opening1 = "French Defense";
+                        } else {
+                            opening1 = "wtf even was that move";
                         }
     
     
@@ -373,6 +396,8 @@ public class App extends JFrame {
                         } else if (getPieceFromPos(8-3, 8-7) != null) {
                             if (getPieceFromPos(3, 7).type.equalsIgnoreCase("knight")) {
                                 opening1 = "Charging Knight Attack";
+                            } else {
+                                opening1 = "wtf even was that move";
                             }
                         } else if (getPieceFromPos(8-4, 8-6) == null) {
                             opening1 = "Center Game";
@@ -384,6 +409,10 @@ public class App extends JFrame {
                             opening1 = "Russian Opening";
                         } else if (getPieceFromPos(8-6, 8-6) == null) {
                             opening1 = "Australian Attack";
+                        } else if (getPieceFromPos(8-0, 8-6) == null) {
+                            opening1 = "French Defense";
+                        } else {
+                            opening1 = "wtf even was that move";
                         }
     
     
@@ -489,6 +518,13 @@ public class App extends JFrame {
                 g.drawString(opening1, 10*pieceSize, 2*pieceSize);
                 g.drawString(opening2, 10*pieceSize, (int) (2.5*pieceSize));
                 g.drawString(opening3, 10*pieceSize, 3*pieceSize);
+
+                g.setFont(new Font("Dialog", 0, 10));
+                try {
+                    g.drawString("Server ID: " + encryptIP(InetAddress.getLocalHost().getHostAddress()), 15*pieceSize, 12);
+                } catch (UnknownHostException e) {
+                    e.printStackTrace();
+                }
 
                 g.drawImage(imagee, 0, 0, null);
                 
@@ -642,21 +678,25 @@ public class App extends JFrame {
             @Override
             public void mousePressed(MouseEvent e) {
                 //System.out.println((getPiece(e.getX(), e.getY()).isBlue?"blue ":"red ")+getPiece(e.getX(), e.getY()).agent);
-                if (!pvp) {
-                    if (getPiece(e.getX(), e.getY()) != null && getPiece(e.getX(), e.getY()).isBlue) {
-                        selectedPiece = getPiece(e.getX(), e.getY());
-                    }
-                } else {
-                    if (getPiece(e.getX(), e.getY()) != null && getPiece(e.getX(), e.getY()).isBlue && turn) {
-                        selectedPiece = getPiece(e.getX(), e.getY());
+                if (getPiece(e.getX(), e.getY()) != null) {
+                    if (!pvp) {
+                        if (getPiece(e.getX(), e.getY()).isBlue) {
+                            selectedPiece = getPiece(e.getX(), e.getY());
+                        }
+                    } else {
+                        if (getPiece(e.getX(), e.getY()).isBlue && turn) {
+                            selectedPiece = getPiece(e.getX(), e.getY());
+                        }
                     }
                 }
+
                 posX = e.getX();
                 posY = e.getY();
             }
 
             @Override
             public void mouseReleased(MouseEvent e) {
+                if (selectedPiece == null) return;
                 boolean blu = App.blue;
                 int oldX = selectedPiece.xPos;
                 int oldY = selectedPiece.yPos;
@@ -691,6 +731,14 @@ public class App extends JFrame {
         });
        
         setDefaultCloseOperation(3);
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                if (pvp) csc.sendMove(-1, 0, 0, 0);
+                System.exit(0);
+            }
+        });
+
         setVisible(true);
     }
 
@@ -701,15 +749,20 @@ public class App extends JFrame {
 
         public ClientSideConnection() {
             try {
-                socket = new Socket("localhost", port);
+                System.out.println("Creating socket " + decryptIP(ip) + ":" + port);
+                socket = new Socket(decryptIP(ip), port);
                 dis = new DataInputStream(socket.getInputStream());
                 dos = new DataOutputStream(socket.getOutputStream());
+                dos.writeInt(1);
+                dos.flush();
+                gameID = dis.readInt();
                 playerID = dis.readInt();
-                System.out.println("connected as player " + playerID);
+                System.out.println("connected as player " + playerID + " on game #" + gameID);
                 if (playerID == 1) {
                     blue = true;
-                    turn = true;
                 } else {
+                    sendMove(-2, -2, -2, -2);
+                    turn = false;
                     blue = false;
                 }
             } catch (IOException e) {
@@ -719,6 +772,7 @@ public class App extends JFrame {
 
         public void sendMove(int oldX, int oldY, int newX, int newY) {
             try {
+                dos.writeInt(gameID);
                 dos.writeInt(oldX);
                 dos.writeInt(oldY);
                 dos.writeInt(newX);
@@ -730,13 +784,28 @@ public class App extends JFrame {
             }
         }
 
-        public int[][] receiveMove() {
+        public void receiveMove() {
             int[][] move = new int[2][2];
             try {
+                int gid = dis.readInt();
+                if (gid != gameID) {
+                    System.out.println("could not match " + gid + " with " + gameID);
+                    return;
+                }
                 move[0][0] = dis.readInt();
                 move[0][1] = dis.readInt();
                 move[1][0] = dis.readInt();
                 move[1][1] = dis.readInt();
+                if (move[0][0] == -1) {
+                    dispose();
+                } else if (move[0][0] == -2 && playerID == 1) {
+                    turn = true;
+                    return;
+                } else if (move[0][1] == -2 && playerID == 1) {
+                    turn = true;
+                    dis.readInt();
+                    return;
+                }
                 System.out.println("Received move: " + move[0][0] + ", " + move[0][1] + " : " + move[1][0] + "," + move[1][1]);
                 System.out.println((getPieceFromPos(move[0][0], move[0][1]).isBlue?"blue ":"red ") + getPieceFromPos(move[0][0], move[0][1]).agent);
                 getPieceFromPos(move[0][0], move[0][1]).move(move[1][0], move[1][1], false);
@@ -745,7 +814,7 @@ public class App extends JFrame {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            return move;
+            return;
         }
     }
 
@@ -944,18 +1013,33 @@ public class App extends JFrame {
             }
             return(new int[][]{xMoves, yMoves});
         } else if (piece.getType().equalsIgnoreCase("silver")) {
-            int[] xMoves = {-1, -1,  0, +1, +1};
-            int[] yMoves = new int[5];
-            int mod;
-            if (piece.isBlue) mod = 1;
-            else mod = -1;
-            // {-1, +1, -1, +1, -1}
-            yMoves[0] = -1*mod;
-            yMoves[1] = 1*mod;
-            yMoves[2] = -1*mod;
-            yMoves[3] = 1*mod;
-            yMoves[4] = -1*mod;
-            return(new int[][]{xMoves, yMoves});
+            if (piece.agent.equalsIgnoreCase("ujett")) {
+                int[] xMoves = {-1, -1,  0, +1, +1, 0, 0, +2, -2};
+                int[] yMoves = {-1, +1, -1, +1, -1, -2, +2, 0, 0};
+                int mod;
+                if (piece.isBlue) mod = 1;
+                else mod = -1;
+                // {-1, +1, -1, +1, -1}
+                yMoves[0] = -1*mod;
+                yMoves[1] = 1*mod;
+                yMoves[2] = -1*mod;
+                yMoves[3] = 1*mod;
+                yMoves[4] = -1*mod;
+                return(new int[][]{xMoves, yMoves});     
+            } else {
+                int[] xMoves = {-1, -1,  0, +1, +1};
+                int[] yMoves = new int[5];
+                int mod;
+                if (piece.isBlue) mod = 1;
+                else mod = -1;
+                // {-1, +1, -1, +1, -1}
+                yMoves[0] = -1*mod;
+                yMoves[1] = 1*mod;
+                yMoves[2] = -1*mod;
+                yMoves[3] = 1*mod;
+                yMoves[4] = -1*mod;
+                return(new int[][]{xMoves, yMoves});     
+            }
         } else if (piece.getType().equalsIgnoreCase("rook")) {
             int x;
             int y;
@@ -964,10 +1048,13 @@ public class App extends JFrame {
             if (piece.isUlted || piece.isStimmed) {
                 xMoveList.add(-1);
                 yMoveList.add(-1);
+
                 xMoveList.add(-1);
                 yMoveList.add(+1);
+
                 xMoveList.add(+1);
                 yMoveList.add(-1);
+
                 xMoveList.add(+1);
                 yMoveList.add(+1);
             }
@@ -1041,10 +1128,13 @@ public class App extends JFrame {
             if (piece.isUlted) {
                 xMoveList.add(-1);
                 yMoveList.add(0);
+
                 xMoveList.add(+1);
                 yMoveList.add(0);
+
                 xMoveList.add(0);
                 yMoveList.add(-1);
+
                 xMoveList.add(0);
                 yMoveList.add(+1);
             } else if (piece.isStimmed) {
@@ -1146,7 +1236,10 @@ public class App extends JFrame {
             for (int r = 0; r < 9; r++) {
                 for (int c = 0; c < 9; c++) {
                     if (getPieceFromPos(c, r) == null) {
-                        availableSquares.add(new int[]{c, r});
+                        int x = piece.xPos, y = piece.yPos;
+                        piece.move(c, r, true);
+                        if (!isChecked(piece.isBlue)) availableSquares.add(new int[]{c, r});
+                        piece.move(x, y, true);
                     }
                 }
             }
@@ -1390,6 +1483,19 @@ public class App extends JFrame {
         // If the king is checked by a silver
         if (silverCheck(blue)) return true;
 
+        // If the king is checked by a Jett
+
+        x = p.xPos;
+        y = p.yPos;
+        int[] jettX = {0, 0, -2, +2};
+        int[] jettY = {-2, +2, 0, 0};
+        for (int i = 0; i < jettX.length; i++) {
+            if (getPieceFromPos(x+jettX[i], y+jettY[i]) == null) continue;
+            if (getPieceFromPos(x+jettX[i], y+jettY[i]) != null && (getPieceFromPos(x+jettX[i], y+jettY[i]).agent.equalsIgnoreCase("ujett") && getPieceFromPos(x+jettX[i], y+jettY[i]).isBlue != blue)) {
+                return true;
+            }
+        }
+
         // If the king is checked by a king
         x = p.xPos;
         y = p.yPos;
@@ -1572,7 +1678,6 @@ public class App extends JFrame {
                 int xPos = p.xPos;
                 int yPos = p.yPos;
                 for (int[] move : getAvailableSquares(p)) {
-                    DeadPiece d = null;
                     if (p.type.equalsIgnoreCase("bishop")) System.out.println(p.xPos + " " + p.agent + " " + move[0] + "," + move[1]);
                     if (p.type.equalsIgnoreCase("king") && Math.abs(move[0] - xPos) > 1) {
                         p.move(move[0], move[1], false);
@@ -1581,10 +1686,9 @@ public class App extends JFrame {
                     }
                     if (killedPiece(move[0], move[1], blue) != null) {
                         Piece k = killedPiece(move[0], move[1], blue);
-                        d = new DeadPiece(k.agent, move[0], move[1], k.isBlue, deadPieces);
-                        killedPiece(move[0], move[1], blue).move(move[0]+(10*(depth+1)), move[1]+(10*(depth+1)), true);
+                        k.move(move[0]+(10*(depth+1)), move[1]+(10*(depth+1)), true);
                     }
-                    if ((p.type.equalsIgnoreCase("lance") && move[0] - xPos == 0) || (p.agent.equalsIgnoreCase("uraze") && d != null)) {
+                    if ((p.type.equalsIgnoreCase("lance") && move[0] - xPos == 0) || (p.agent.equalsIgnoreCase("uraze") && getPieceFromPos(move[0]+(10*(depth+1)), move[1]+(10*(depth+1))) != null)) {
                         p.move(xPos, yPos, true);
                     }
 
@@ -1614,8 +1718,7 @@ public class App extends JFrame {
                         p.move(xPos, yPos, true);
                         p.updateXY();
                     }
-                    if (d != null) {
-                        d.kill();
+                    if (getPieceFromPos((move[0]+(10*(depth+1))), (move[1]+(10*(depth+1)))) != null) {
                         getPieceFromPos((move[0]+(10*(depth+1))), (move[1]+(10*(depth+1)))).move(move[0], move[1], true);
                     }
                     if (evaluation >= beta) {
@@ -1632,6 +1735,7 @@ public class App extends JFrame {
 
     public static void redMove() {
         search = true;
+        Piece piece = null;
         boolean bestCapture = false;
         int[] bestOrigin = {0, 0};
         int[] bestMove = {10,10};
@@ -1641,7 +1745,8 @@ public class App extends JFrame {
             Piece p = pieces.get(i);
             if (!p.isBlue) {
                 for (int[] move : getAvailableSquares(p)) {
-                    System.out.println(move[0] + "," + move[1]);
+                    if (p.type.equalsIgnoreCase("bishop")) System.out.println(p.xPos + " " + p.agent + " " + move[0] + "," + move[1]);
+                    //System.out.println(move[0] + "," + move[1]);
                     boolean capture = false;
                     int xPos = p.xPos;
                     int yPos = p.yPos;
@@ -1662,24 +1767,26 @@ public class App extends JFrame {
                     if ((Math.abs(4-move[0]) <= Math.abs(4-xPos)) && (Math.abs(4-move[1]) <= Math.abs(4-yPos))) {
                         App.redVision++;
                     }
-                    float eval = search(1, Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY, true);
+                    float eval = search(0, Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY, true);
                     if (eval < bestEval) {
                         bestCurrentEval = evaluate();
-                        bestOrigin[0] = xPos*pieceSize;
-                        bestOrigin[1] = yPos*pieceSize;
+                        bestOrigin[0] = xPos;
+                        bestOrigin[1] = yPos;
                         bestEval = eval;
                         bestMove[0] = move[0];
                         bestMove[1] = move[1];
                         bestCapture = capture;
+                        piece = p;
                     } else if (eval == bestEval) {
                         if (evaluate() < bestCurrentEval) {
                             bestCurrentEval = evaluate();
-                            bestOrigin[0] = xPos*pieceSize;
-                            bestOrigin[1] = yPos*pieceSize;
+                            bestOrigin[0] = xPos;
+                            bestOrigin[1] = yPos;
                             bestEval = eval;
                             bestMove[0] = move[0];
                             bestMove[1] = move[1];
                             bestCapture = capture;
+                            piece = p;
                         }
                     }
                     if (p.type.equalsIgnoreCase("king") && (move[0] - xPos) > 1) {
@@ -1695,6 +1802,7 @@ public class App extends JFrame {
                         lastDestination[0] = move[0];
                         lastDestination[1] = move[1];
                         p.move(xPos, yPos, true);
+                        if (p.type.equalsIgnoreCase("bishop")) System.out.println(p.agent + " back to " + p.xPos + "," + p.yPos);
                         p.updateXY();
                     }
 
@@ -1705,18 +1813,20 @@ public class App extends JFrame {
             }
         }
         search = false;
-        System.out.println("moved " + getPiece(bestOrigin[0], bestOrigin[1]).agent + " to " + bestMove[0] + "," + bestMove[1]);
-        if (getPiece(bestOrigin[0], bestOrigin[1]).type.equalsIgnoreCase("king") && Math.abs(bestMove[0] - bestOrigin[0]/pieceSize) > 1) {
-            getPiece(bestOrigin[0], bestOrigin[1]).move(bestMove[0], bestMove[1], true);
-            if ((bestMove[0] - bestOrigin[0]/pieceSize) > 1) {
-                getPiece(8*pieceSize, bestOrigin[1]).move(bestOrigin[0]/pieceSize+1, bestOrigin[1]/pieceSize, true);
-                getPiece(bestOrigin[0]+pieceSize, bestOrigin[1]).updateXY();
+        System.out.println(bestOrigin[0] + "," + bestOrigin[1]);
+        System.out.println(piece.xPos + "," + piece.yPos);
+        System.out.println("moved " + getPieceFromPos(bestOrigin[0], bestOrigin[1]).agent + " to " + bestMove[0] + "," + bestMove[1]);
+        if (getPieceFromPos(bestOrigin[0], bestOrigin[1]).type.equalsIgnoreCase("king") && Math.abs(bestMove[0] - bestOrigin[0]/pieceSize) > 1) {
+            getPieceFromPos(bestOrigin[0], bestOrigin[1]).move(bestMove[0], bestMove[1], true);
+            if ((bestMove[0] - bestOrigin[0]) > 1) {
+                getPieceFromPos(8, bestOrigin[1]).move(bestOrigin[0]+1, bestOrigin[1], true);
+                getPieceFromPos(bestOrigin[0]+1, bestOrigin[1]).updateXY();
             } else {
-                getPiece(0, bestOrigin[1]).move(bestOrigin[0]/pieceSize-1, bestOrigin[1]/pieceSize, true);
-                getPiece(bestOrigin[0]-pieceSize, bestOrigin[1]).updateXY();
+                getPieceFromPos(0, bestOrigin[1]).move(bestOrigin[0]-1, bestOrigin[1], true);
+                getPieceFromPos(bestOrigin[0]-1, bestOrigin[1]).updateXY();
             }
         } else {
-            getPiece(bestOrigin[0], bestOrigin[1]).move(bestMove[0], bestMove[1], false);
+            getPieceFromPos(bestOrigin[0], bestOrigin[1]).move(bestMove[0], bestMove[1], false);
         }
         if (getPieceFromPos(bestMove[0], bestMove[1]) != null) {
             getPieceFromPos(bestMove[0], bestMove[1]).updateXY();
@@ -1747,12 +1857,35 @@ public class App extends JFrame {
         } catch (UnsupportedAudioFileException | IOException | LineUnavailableException e) {
             e.printStackTrace();
         }
+    }
 
+    public String encryptIP(String ip) {
+        String newIP = "";
+        for (int i = 0; i < ip.length(); i++) {
+            try {
+                newIP += (char)(Integer.parseInt(Character.toString(ip.charAt(i))) + 97);
+            } catch (Exception e) {
+                newIP += "-";
+            }
+        }
+        return newIP;
+    }
+
+    public String decryptIP(String ip) {
+        String newIP = "";
+        for (int i = 0; i < ip.length(); i++) {
+            if (Character.hashCode(ip.charAt(i)) - 97 >= 0) {
+                newIP += Character.hashCode(ip.charAt(i)) - 97;
+            } else {
+                newIP += ".";
+            }
+        }
+        return newIP;
     }
 
     public static void main(String[] args) throws Exception {
-        App a = new App(9999);
-        if (!pvp) {
+        App a = new App("bot", 420);
+        if (pvp) {
             a.connectToServer();
             a.startReceivingMoves();
         }
