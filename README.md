@@ -39,7 +39,7 @@ Pawns move one space forward, but can capture one space diagonally forward. Pawn
 When promoted, Raze's attacks do not immediately capture an enemy piece, but instead attack a sticky bomb onto them. After the oppoent's next turn, all enemy adjacent pieces (not diagonal) to the targetted piece will be killed. The king (Cypher) cannot be killed by Raze's sticky bomb.
 
 ### Fade
-TBD
+When promoted, the opponent will be blinded (unable to see your pieces) for two turns. This ability cannot be reactivated.
 
 ### Breach
 When promoted, the three enemy pieces adjacent forward to Breach will be stunned for the next turn. Stunned pieces will be unable to move for the duration of their stun. The king (Cypher) cannot be stunned by Breach. This ability cannot be reactivated
