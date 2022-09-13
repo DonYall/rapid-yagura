@@ -36,6 +36,7 @@ public class App extends JFrame {
     public static int redMaterial = 0;
     public static boolean blueCastled = false;
     public static boolean redCastled = false;
+    private int isBlinded = 0;
     public static int[] lastDeparture = {10, 10};
     public static int[] lastDestination = {10, 10};
     public static int pieceSize = 64;
@@ -174,6 +175,18 @@ public class App extends JFrame {
             }
         }
 
+        BufferedImage blank = ImageIO.read(App.class.getResource("L.png"));
+        Image blankImages[] = new Image[20];
+        c = 0;
+        for (int y = 0; y < 300; y += 100) {
+            for (int x = 0; x < 900; x += 100) {
+                if (y == 100 && x > 100) continue; // 2nd row only has 2 pieces
+                blankImages[c] = blank.getSubimage(x, y, 100, 100).getScaledInstance(pieceSize, pieceSize, BufferedImage.SCALE_SMOOTH);
+                c++;
+            }
+        }
+
+
         // Getting images for red team pieces
         Image redPiecesW[] = new Image[20];
         //BufferedImage red = ImageIO.read(getInputStream(new URL("https://cdn.discordapp.com/attachments/873323229979230258/1005952555928530944/redTeamm.png")));
@@ -221,9 +234,7 @@ public class App extends JFrame {
         //BufferedImage gg = ImageIO.read(getInputStream(new URL("https://cdn.discordapp.com/attachments/873323229979230258/1005952554221453433/gg.png")));
         BufferedImage gg = ImageIO.read(App.class.getResource("gg.png"));
 
-        bluePieces = bluePiecesW;
-        redPieces = redPiecesW;
-
+        
         // Drawing the game panel and starting position
         gamePanel = new JPanel() {
             @Override
@@ -236,7 +247,11 @@ public class App extends JFrame {
                 if (playerID > 1) {
                     bluePieces = redPiecesF;
                     redPieces = bluePiecesF;
+                } else {
+                    bluePieces = bluePiecesW;
+                    redPieces = redPiecesW;            
                 }
+                if (isBlinded > 0) redPieces = blankImages;
 
                 boolean bChec = false;
                 boolean rChec = false;
@@ -579,7 +594,7 @@ public class App extends JFrame {
 
                 if (selectedPiece != null) {
                     for (int[] move : getAvailableSquares(selectedPiece)) {
-                        if ((killedPiece(move[0], move[1], selectedPiece.isBlue) != null) || (killedPiece(move[0], move[1], !selectedPiece.isBlue) != null)) {
+                        if ((killedPiece(move[0], move[1], selectedPiece.isBlue) != null || killedPiece(move[0], move[1], !selectedPiece.isBlue) != null) && (isBlinded <= 0)) {
                             g.drawImage(misc[0], move[0]*pieceSize, move[1]*pieceSize, this);
                         } else {
                             g.drawImage(misc[3], move[0]*pieceSize, move[1]*pieceSize, this);
@@ -588,8 +603,10 @@ public class App extends JFrame {
                 }
 
                 if (lastDeparture[0] < 10 && lastDestination[0] < 10) {
-                    g.drawImage(misc[1], lastDeparture[0]*pieceSize, lastDeparture[1]*pieceSize, this);
-                    g.drawImage(misc[1], lastDestination[0]*pieceSize, lastDestination[1]*pieceSize, this);
+                    if (isBlinded <= 0) {
+                        g.drawImage(misc[1], lastDeparture[0]*pieceSize, lastDeparture[1]*pieceSize, this);
+                        g.drawImage(misc[1], lastDestination[0]*pieceSize, lastDestination[1]*pieceSize, this);    
+                    }
                 }
 
                 for (Piece p: pieces) {
@@ -597,19 +614,23 @@ public class App extends JFrame {
                     "neon", "yoru",
                     "chamber", "omen", "brimstone", "astra", "cypher", "killjoy", "viper", "OMEN", "sova");
                     if (p.isStimmed) {
-                        if (p.isBlue) {
-                            g.drawImage(misc[10], p.x, p.y, this);
-                        } else {
-                            g.drawImage(misc[11], p.x, p.y, this);
+                        if (isBlinded <= 0) {
+                            if (p.isBlue) {
+                                g.drawImage(misc[10], p.x, p.y, this);
+                            } else {
+                                g.drawImage(misc[11], p.x, p.y, this);
+                            }    
                         }
                     }
                     int i;
                     if (p.agent.startsWith("u")) {
                         i = agents.indexOf(p.agent.substring(1));
-                        if (p.isBlue) {
-                            g.drawImage(misc[5], p.x, p.y, this);
-                        } else {
-                            g.drawImage(misc[4], p.x, p.y, this);
+                        if (isBlinded <= 0) {
+                            if (p.isBlue) {
+                                g.drawImage(misc[5], p.x, p.y, this);
+                            } else {
+                                g.drawImage(misc[4], p.x, p.y, this);
+                            }
                         }
                     } else {
                         i = agents.indexOf(p.agent);
@@ -622,7 +643,7 @@ public class App extends JFrame {
                         }
                     } else if (!p.isBlue && p != selectedPiece) {
                         if (p.agent.equalsIgnoreCase("ureyna") && p.isUlted) {
-                            g.drawImage(misc[6], p.x, p.y, this);
+                            if (isBlinded > 0) g.drawImage(misc[6], p.x, p.y, this);
                         } else {
                             g.drawImage(redPieces[i], p.x, p.y, this);
                         }
@@ -630,7 +651,8 @@ public class App extends JFrame {
                     
                 }
                 for (Piece p: pieces) {
-                    List<String> agents = Arrays.asList("raze", "fade", "breach", "reyna", "jett", "phoenix", "skye", "sage", "kayo",
+                    List<String> agents = Arrays.asList(
+                    "raze", "fade", "breach", "reyna", "jett", "phoenix", "skye", "sage", "kayo",
                     "neon", "yoru",
                     "chamber", "omen", "brimstone", "astra", "cypher", "killjoy", "viper", "OMEN", "sova");
                     int i;
@@ -778,6 +800,7 @@ public class App extends JFrame {
                 dos.writeInt(newX);
                 dos.writeInt(newY);
                 dos.flush();
+                isBlinded--;
                 turn = !turn;
             } catch (IOException e) {
                 e.printStackTrace();
@@ -809,6 +832,9 @@ public class App extends JFrame {
                 System.out.println("Received move: " + move[0][0] + ", " + move[0][1] + " : " + move[1][0] + "," + move[1][1]);
                 System.out.println((getPieceFromPos(move[0][0], move[0][1]).isBlue?"blue ":"red ") + getPieceFromPos(move[0][0], move[0][1]).agent);
                 getPieceFromPos(move[0][0], move[0][1]).move(move[1][0], move[1][1], false);
+                if (getPieceFromPos(move[1][0], move[1][1]).agent.equalsIgnoreCase("ufade") && getPieceFromPos(move[1][0], move[1][1]).isUlted) {
+                    isBlinded = 2;
+                }
                 repaint();
                 turn = !turn;
             } catch (IOException e) {

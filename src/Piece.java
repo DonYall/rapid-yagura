@@ -69,6 +69,7 @@ public class Piece {
                 type = "silver";
                 value = 2;
             }
+            if (agent.equalsIgnoreCase("ufade")) this.isUlted = true;
         }
         if (agent.equalsIgnoreCase("cypher")) {
             type = "king";
@@ -357,6 +358,10 @@ public class Piece {
                     App.playSound(App.scatterURL);
                 }
 
+                if (this.agent.equalsIgnoreCase("ufade") && this.isUlted) {
+                    this.isUlted = false;
+                }
+
                 for (Piece p : App.stunnedPieces) {
                     if (p.isBlue == this.isBlue) {
                         p.isStunned = false;
@@ -370,6 +375,7 @@ public class Piece {
                     }
                 }
 
+                // Promotions
                 if (this.isBlue && !this.agent.startsWith("u") && !this.type.equalsIgnoreCase("king") && !this.type.equalsIgnoreCase("silver")) {
                     if (this.yPos <= 2) {
                         Piece p = new Piece("u" + this.agent, this.xPos, this.yPos, this.isBlue, pieces);
