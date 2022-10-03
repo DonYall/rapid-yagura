@@ -98,7 +98,7 @@ Brimstone can attach himself to another piece, placing a 'Stim Beacon' on it. Th
 TBD
 
 ### Killjoy
-TBD
+Killjoy's ability is activated by moving her outside the board. Once activated, a counter starts. The enemy has one turn to make their pieces exit the 4 rows on your side of the board. After one turn, all enemy pieces within the 4 rows on your side of the board will be stunned for 1 turns.
 
 ### Viper
 TBD
