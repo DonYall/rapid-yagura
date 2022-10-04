@@ -8,7 +8,7 @@ In Shogi, Yagura is a term used to describe a "castle" or a "fortress", while it
 
 The game is nowhere near completion, and I'm still in the testing/debugging phase of the raw game before I move onto implementing more advanced features.
 But I'll upload pre-releases so you can check out how the game's progress is doing for your own entertainment, or to help me finish this project.
-You can find my releases [here](https://github.com/DonYall/rapid-yagura/releases)
+You can find my releases [here](https://github.com/DonYall/rapid-yagura/releases).
 Make sure you have [Java 8](https://www.oracle.com/java/technologies/downloads/) or newer installed on your system before running the Jar file.
 
 Contact me on Discord: DonYall#0567
